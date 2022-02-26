@@ -1,3 +1,5 @@
+import { incrementNeighbors } from "./CellManipulator";
+
 export type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 export type Field = Cell[][];
 export type Coords = [number, number];
@@ -22,30 +24,40 @@ export const CellState: Record<string, Cell> = {
 // 	[0, 0],
 // 	[0, 0],
 // ]
-const emptyFieldGenerator = (
+export const emptyFieldGenerator = (
 	size: number,
 	state: Cell = CellState.empty
 ): Field => new Array(size).fill(null).map(() => new Array(size).fill(state));
 
-const fieldGenerator = (size: number, density: number): Field => {
-	if (density < 0 || density > 1) {
-		throw new Error("Density must be between 0 and 1");
+export const fieldGenerator = (size: number, probability: number): Field => {
+	if (probability < 0 || probability > 1) {
+		throw new Error("Probability must be between 0 and 1");
 	}
 
-	const freeCellsCount = size * size; // 10 * 10
-	const cellsWithBombs = freeCellsCount * density; // 100 * 0.1 = 10
+	let unProcessedCells = size * size; // 10 * 10
+	let restCellsWithBombs = unProcessedCells * probability; // 100 * 0.1 = 10
 
 	const result: Field = emptyFieldGenerator(size);
 	// loop every row and column inside of field
-	for (let i = 0; i < size; i++) {
-		for (let j = 0; j < size; j++) {
-			if (cellsWithBombs === 0) {
+	for (let y = 0; y < size; y++) {
+		for (let x = 0; x < size; x++) {
+			if (restCellsWithBombs === 0) {
 				return result;
 			}
+
+			// if (restCellsWithBombs / unProcessedCells > 0) {
+			// to add bomb in random cell
+			if (restCellsWithBombs / unProcessedCells > Math.random()) {
+				result[y][x] = CellState.bomb;
+				incrementNeighbors([y, x], result);
+
+				restCellsWithBombs--;
+			}
+
+			// Decrease cell 1 on each loop
+			unProcessedCells--;
 		}
 	}
 
 	return result;
 };
-
-export { emptyFieldGenerator, fieldGenerator };
